@@ -3913,6 +3913,13 @@ public class SettingsProvider extends ContentProvider {
                     migrateLegacySettingsForUserLocked(dbHelper, database, userId,
                             Context.DEVICE_ID_DEFAULT);
 
+                    // The v136 upgrade migrates per-app SSAIDs. Unlike system,
+                    // secure and global settings, this state has no legacy table,
+                    // so migration above has not created it. Initialize it before
+                    // the upgrade, as ensureSettingsForUserAndDeviceLocked does.
+                    ensureSettingsStateLocked(makeKey(SETTINGS_TYPE_SSAID, userId,
+                            Context.DEVICE_ID_DEFAULT));
+
                     // Upgrade to the latest version.
                     UpgradeController upgrader = new UpgradeController(userId,
                             Context.DEVICE_ID_DEFAULT);
