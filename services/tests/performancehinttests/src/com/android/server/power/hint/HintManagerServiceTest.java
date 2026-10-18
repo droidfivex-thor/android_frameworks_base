@@ -388,6 +388,21 @@ public class HintManagerServiceTest {
     }
 
     @Test
+    public void testMissingPowerHalUsesUnsupportedCapabilities() throws Exception {
+        mIPowerMock = null;
+        when(mNativeWrapperMock.halGetHintSessionPreferredRate()).thenReturn(-1L);
+
+        HintManagerService service = createService();
+        SupportInfo supportInfo = service.getSupportInfo();
+
+        assertThat(supportInfo.usesSessions).isFalse();
+        assertThat(supportInfo.headroom.isCpuSupported).isFalse();
+        assertThat(supportInfo.headroom.isGpuSupported).isFalse();
+        assertThat(supportInfo.sessionHints).isEqualTo(0);
+        assertThat(supportInfo.sessionModes).isEqualTo(0);
+    }
+
+    @Test
     public void testCreateHintSessionInvalidPid() throws Exception {
         HintManagerService service = createService();
         IBinder token = new Binder();
