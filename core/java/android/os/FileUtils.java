@@ -479,7 +479,19 @@ public final class FileUtils {
                 } else if (S_ISFIFO(st_in.st_mode) || S_ISFIFO(st_out.st_mode)) {
                     return copyInternalSplice(in, out, count, signal, executor, listener);
                 } else if (S_ISSOCK(st_in.st_mode) || S_ISSOCK(st_out.st_mode)) {
-                    return copyInternalSpliceSocket(in, out, count, signal, executor, listener);
+                    try {
+                        return copyInternalSpliceSocket(in, out, count, signal, executor,
+                                listener);
+                    } catch (ErrnoException e) {
+                        // Kernels before 4.5 cannot splice from AF_UNIX stream sockets
+                        // (no unix_stream_splice_read). The first splice() fails before
+                        // any data is consumed, so falling back to userspace is safe.
+                        if (e.errno == EINVAL || e.errno == ENOSYS) {
+                            return copyInternalUserspace(in, out, count, signal, executor,
+                                    listener);
+                        }
+                        throw e;
+                    }
                 }
             } catch (ErrnoException e) {
                 throw e.rethrowAsIOException();
